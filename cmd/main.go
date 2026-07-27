@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -15,6 +14,7 @@ func main() {
 
 	if len(args) < 1 {
 		println("No Command provided")
+		return
 	}
 	cmd := args[0]
 
@@ -23,19 +23,12 @@ func main() {
 		args = args[1:] // remove the command word
 	}
 
-	fs := flag.NewFlagSet("expense-tracker", flag.ContinueOnError)
-	description := fs.String("description", "", "Description for your expense")
-	amount := fs.Float64("amount", 0, "amount")
-
-	if err := fs.Parse(args); err != nil {
-		fmt.Println(err)
-		os.Exit(2)
-	}
-
-	fmt.Println("Flag description", *description, "amount", *amount)
-
-	storage := storage.NewStorage("expenses")
+	storage := storage.NewStorage[[]service.Expense]("expenses.json")
 	svc := service.NewService(storage)
 	ctrl := controller.NewController(svc)
-	ctrl.Execute(controller.Command(cmd))
+	err := ctrl.Execute(controller.Command(cmd), args)
+	if err != nil {
+		fmt.Printf("An error occurred %s", err)
+		os.Exit(2)
+	}
 }

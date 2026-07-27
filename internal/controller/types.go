@@ -7,4 +7,5 @@ const (
 	List    Command = "list"
 	Delete  Command = "delete"
 	Summary Command = "summary"
+	Update  Command = "update"
 )
