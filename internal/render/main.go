@@ -20,9 +20,13 @@ func Render(expenses []service.Expense) {
 			expense.ID,
 			expense.Date.Format("2006-01-02 15:04:05"),
 			expense.Description,
-			fmt.Sprintf("£%d.%02d", expense.Amount/100, expense.Amount%100),
+			FormatAmount(expense.Amount),
 		)
 	}
 
 	table.Render()
+}
+
+func FormatAmount(amount int) string {
+	return fmt.Sprintf("£%d.%02d", amount/100, amount%100)
 }

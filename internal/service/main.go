@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/Chibas/ExpenseTrackerGo/internal/storage"
@@ -17,9 +18,10 @@ type Expense struct {
 
 type Service interface {
 	Add(description string, amount int) (id string, err error)
-	Delete() error
+	Delete(id string) (bool, error)
 	List() (data []Expense, err error)
-	Update() error
+	Update(id string, description string, amount int) (bool, error)
+	Summary() (int, error)
 }
 
 type service struct {
@@ -58,14 +60,70 @@ func (s *service) Add(description string, amount int) (id string, err error) {
 	return expense.ID, s.storage.Write(expenses)
 }
 
-func (s *service) Delete() error {
-	return nil
+func (s *service) Delete(id string) (bool, error) {
+	expenses, err := s.storage.Read()
+	if err != nil {
+		return false, err
+	}
+	i := slices.IndexFunc(expenses, func(e Expense) bool {
+		return e.ID == id
+	})
+	if i == -1 {
+		return false, nil
+	}
+	modifiedExpenses := slices.Delete(expenses, i, i+1)
+	if err := s.storage.Write(modifiedExpenses); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (s *service) List() (data []Expense, err error) {
 	return s.storage.Read()
 }
 
-func (s *service) Update() error {
-	return nil
+func (s *service) Update(id string, description string, amount int) (bool, error) {
+	expenses, err := s.storage.Read()
+	if err != nil {
+		return false, err
+	}
+	if len(id) < 1 {
+		return false, errors.New("id can't be empty")
+	}
+	if len(description) < 1 {
+		return false, errors.New("Description can't be empty")
+	}
+
+	if amount < 1 {
+		return false, errors.New("Amount can't be less than 1")
+	}
+	i := slices.IndexFunc(expenses, func(e Expense) bool {
+		return e.ID == id
+	})
+	if i == -1 {
+		return false, nil
+	}
+	expense := expenses[i]
+	expense.Description = description
+	expense.Date = time.Now()
+	expense.Amount = amount
+
+	expenses[i] = expense
+
+	if err := s.storage.Write(expenses); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (s *service) Summary() (sum int, err error) {
+	expenses, err := s.storage.Read()
+	if err != nil {
+		return 0, err
+	}
+	for _, expense := range expenses {
+		sum += expense.Amount
+	}
+	return sum, nil
 }

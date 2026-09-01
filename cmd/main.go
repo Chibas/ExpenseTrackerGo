@@ -19,7 +19,6 @@ func main() {
 	cmd := args[0]
 
 	if len(args) > 0 {
-		fmt.Println("command:", args[0])
 		args = args[1:] // remove the command word
 	}
 
